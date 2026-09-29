@@ -21,9 +21,9 @@ export const SlideIntro: React.FC<SlideIntroProps> = ({ currentSlide, onNavigate
         </div>
 
         <div className="max-w-2xl space-y-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-300 text-xs sm:text-sm font-semibold">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-300 text-sm font-semibold">
             <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>디즈니·픽사 영화로 마스터하는 생생한 영어</span>
+            <span>영화 명장면 클립과 함께하는 영어 수업</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl font-extrabold text-amber-400 tracking-tight leading-tight">
@@ -163,23 +163,33 @@ export const SlideIntro: React.FC<SlideIntroProps> = ({ currentSlide, onNavigate
               <span>Talk with a partner</span>
             </div>
 
-            <div className="space-y-3">
-              <div className="p-3.5 rounded-2xl bg-amber-100/70 border border-amber-200">
-                <p className="font-bold text-base text-slate-900">
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl bg-amber-100/80 border border-amber-200">
+                <p className="font-extrabold text-base sm:text-lg text-slate-950 font-serif">
                   Q1. When do you worry about the future?
                 </p>
-                <p className="text-xs text-slate-600 mt-1">
-                  여러분이 미래나 다가올 일에 대해 가장 불안해질 때는 언제인가요? (예: 시험, 새 학기 등)
-                </p>
+                <div className="mt-2.5 pt-2.5 border-t border-amber-200/80">
+                  <span className="text-xs font-bold text-amber-900 uppercase tracking-wider block mb-1">
+                    Sample Answer:
+                  </span>
+                  <p className="text-sm font-medium text-slate-800 italic leading-relaxed">
+                    "I usually worry about the future when I have to take important exams or when I move to a new school."
+                  </p>
+                </div>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-amber-100/70 border border-amber-200">
-                <p className="font-bold text-base text-slate-900">
+              <div className="p-4 rounded-2xl bg-amber-100/80 border border-amber-200">
+                <p className="font-extrabold text-base sm:text-lg text-slate-950 font-serif">
                   Q2. What do you do to feel better?
                 </p>
-                <p className="text-xs text-slate-600 mt-1">
-                  불안해질 때 기분을 나아지게 하기 위해 무엇을 하나요? (예: 음악 듣기, 친구와 대화 등)
-                </p>
+                <div className="mt-2.5 pt-2.5 border-t border-amber-200/80">
+                  <span className="text-xs font-bold text-amber-900 uppercase tracking-wider block mb-1">
+                    Sample Answer:
+                  </span>
+                  <p className="text-sm font-medium text-slate-800 italic leading-relaxed">
+                    "I take deep breaths, listen to my favorite music, or talk things through with my close friends."
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -245,9 +255,11 @@ export const SlideIntro: React.FC<SlideIntroProps> = ({ currentSlide, onNavigate
                 </p>
               </div>
 
-              <div className="pt-2 border-t border-amber-200/80">
-                <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider block mb-1">예문:</span>
-                <p className="text-xs font-medium text-slate-800 italic">
+              <div className="pt-3 border-t border-amber-300/80">
+                <span className="text-xs font-black text-amber-950 uppercase tracking-wider block mb-1">
+                  예문 (Example):
+                </span>
+                <p className="text-xl sm:text-2xl font-bold text-slate-950 leading-relaxed font-serif tracking-tight">
                   "{item.example}"
                 </p>
               </div>

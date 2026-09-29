@@ -239,13 +239,13 @@ export const SlideVideoQuiz: React.FC<SlideVideoQuizProps> = ({
             {/* Feedback & Explanation Card */}
             {isAnswered && (
               <div
-                className={`p-4 rounded-2xl border text-sm animate-fadeIn ${
+                className={`p-4 rounded-2xl border text-sm animate-fadeIn space-y-2 ${
                   isCorrect
                     ? 'bg-emerald-950/60 border-emerald-500/50 text-emerald-200'
                     : 'bg-amber-950/60 border-amber-500/50 text-amber-200'
                 }`}
               >
-                <div className="flex items-center gap-2 font-bold text-base mb-1">
+                <div className="flex items-center gap-2 font-bold text-base">
                   {isCorrect ? (
                     <>
                       <Sparkles className="w-5 h-5 text-emerald-400" />
@@ -260,10 +260,16 @@ export const SlideVideoQuiz: React.FC<SlideVideoQuizProps> = ({
                     </>
                   )}
                 </div>
-                <p className="text-xs sm:text-sm text-slate-200 mt-1">{q.explanation}</p>
-                <p className="text-xs sm:text-sm text-emerald-300/90 mt-1 font-medium">
+                <p className="text-xs sm:text-sm text-slate-200">{q.explanation}</p>
+                <p className="text-xs sm:text-sm text-emerald-300/90 font-medium">
                   {q.koreanExplanation}
                 </p>
+
+                {/* Direct dialogue citation */}
+                <div className="mt-2 p-2.5 rounded-xl bg-black/40 border border-white/10 text-xs">
+                  <span className="text-amber-300 font-bold block mb-1">🎬 영상 속 일치 대사:</span>
+                  <span className="font-mono text-white italic">"{q.transcriptSnippet}"</span>
+                </div>
               </div>
             )}
 

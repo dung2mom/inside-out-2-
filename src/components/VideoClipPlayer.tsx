@@ -176,9 +176,14 @@ export const VideoClipPlayer: React.FC<VideoClipPlayerProps> = ({
         )}
 
         {showTranscript && transcriptSnippet && (
-          <div className="p-2.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-xs sm:text-sm text-indigo-200 animate-fadeIn font-mono">
-            <span className="text-indigo-400 font-semibold">대사: </span>
-            {transcriptSnippet}
+          <div className="p-3.5 rounded-2xl bg-indigo-950/60 border border-indigo-500/40 text-xs sm:text-sm text-indigo-100 animate-fadeIn space-y-1">
+            <div className="flex items-center gap-1.5 text-indigo-300 font-bold uppercase tracking-wider text-[11px]">
+              <Volume2 className="w-3.5 h-3.5 text-indigo-400" />
+              <span>영상 속 정답 구간 대사 (Authentic Quote)</span>
+            </div>
+            <p className="font-mono text-white text-sm sm:text-base leading-relaxed bg-black/30 p-2 rounded-xl border border-indigo-500/20">
+              "{transcriptSnippet}"
+            </p>
           </div>
         )}
       </div>
