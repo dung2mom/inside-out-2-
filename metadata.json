@@ -1,0 +1,6 @@
+{
+  "name": "Inside Out 2: Riley's What-Ifs English Learning",
+  "description": "인사이드 아웃 2 영화 클립으로 배우는 생활영어 (Riley's What-Ifs: Worry, Sorry & the Future) 인터랙티브 학습 앱",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
