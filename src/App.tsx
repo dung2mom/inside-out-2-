@@ -216,6 +216,12 @@ export default function App() {
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Footer */}
+        <footer className="mt-8 mb-4 text-center text-xs text-slate-500 space-y-1">
+          <p>© 2026 Yeon Jeong Kim. All rights reserved.</p>
+          <p>Inside Out 2 © Disney/Pixar. Film dialogue and characters are used for educational purposes only.</p>
+        </footer>
       </main>
     </div>
   );
