@@ -19,6 +19,9 @@ export function createClient() {
     typeof window !== 'undefined' && window.location.protocol === 'https:';
 
   return createBrowserClient(supabaseUrl, supabaseKey, {
+    auth: {
+      detectSessionInUrl: false,
+    },
     cookieOptions: isHttps
       ? { sameSite: 'none', secure: true }
       : { sameSite: 'lax' },

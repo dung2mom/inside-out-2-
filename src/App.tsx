@@ -10,10 +10,10 @@ import { SlideWrapUp } from './components/slides/SlideWrapUp';
 import { LoginModal } from './components/LoginModal';
 import { AuthPage } from './pages/AuthPage';
 import { useAuth } from './contexts/AuthContext';
-import { Film, CheckCircle2, ChevronLeft, ChevronRight, Layers, Users, BookOpen } from 'lucide-react';
+import { Film, CheckCircle2, ChevronLeft, ChevronRight, Layers, Users, BookOpen, Loader2, AlertCircle } from 'lucide-react';
 
 export default function App() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading, authError, clearAuthError } = useAuth();
   const [currentSlide, setCurrentSlide] = useState<number>(1);
   const [userAnswers, setUserAnswers] = useState<Record<string, 'A' | 'B' | 'C'>>({});
   const [userFillIns, setUserFillIns] = useState<Record<number, string>>({});
@@ -32,9 +32,14 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Automatically navigate back to main page when authenticated on /auth
+  // Automatically navigate back to main page when authenticated on /auth or /auth/callback
   useEffect(() => {
-    if (isAuthenticated && pathname === '/auth') {
+    if (
+      isAuthenticated &&
+      (pathname === '/auth' ||
+        pathname === '/auth/callback' ||
+        pathname === '/auth/callback/')
+    ) {
       window.history.replaceState({}, '', '/');
       setPathname('/');
     }
@@ -89,6 +94,54 @@ export default function App() {
     { num: 19, title: 'Your Turn: Pick a Topic', category: 'Topics', tag: '주제 선택' },
     { num: 20, title: 'Wrap-up & Exit Ticket', category: 'Wrap-up', tag: '마무리' },
   ];
+
+  // OAuth callback route (/auth/callback) served via SPA rewrite on Vercel
+  if (pathname === '/auth/callback' || pathname === '/auth/callback/') {
+    const handleReturnHome = () => {
+      clearAuthError();
+      window.history.replaceState({}, '', '/');
+      setPathname('/');
+    };
+
+    return (
+      <div className="min-h-screen bg-[#0e1915] text-slate-100 flex items-center justify-center p-4 font-sans">
+        <div className="w-full max-w-md rounded-3xl bg-[#14231e] border border-emerald-800/60 p-8 text-center shadow-2xl">
+          {authError && !isLoading ? (
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-rose-300 flex items-center justify-center mx-auto">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <h1 className="text-lg font-bold text-slate-100">
+                로그인 처리 중 문제가 발생했습니다
+              </h1>
+              <p className="text-sm text-rose-200/90 break-words">
+                {authError}
+              </p>
+              <button
+                type="button"
+                onClick={handleReturnHome}
+                className="mt-2 inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-sm transition-colors cursor-pointer"
+              >
+                메인 페이지로 돌아가기
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-400/15 border border-amber-400/40 text-amber-300 flex items-center justify-center mx-auto">
+                <Loader2 className="w-6 h-6 animate-spin" />
+              </div>
+              <h1 className="text-lg font-bold text-slate-100">
+                Google 로그인을 완료하는 중입니다...
+              </h1>
+              <p className="text-xs text-slate-400">
+                잠시 후 메인 페이지로 자동 이동합니다.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   // Standalone /auth route (redirects to main page once signed in)
   if (pathname === '/auth') {

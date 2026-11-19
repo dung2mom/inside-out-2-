@@ -32,6 +32,39 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+// Prevent duplicate PKCE code exchanges (e.g. React StrictMode double effect invocation)
+const codeExchangePromises = new Map<string, Promise<string | null>>();
+
+function exchangeAuthCodeOnce(code: string): Promise<string | null> {
+  const existing = codeExchangePromises.get(code);
+  if (existing) {
+    return existing;
+  }
+
+  const promise = (async (): Promise<string | null> => {
+    const supabase = createClient();
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      return null;
+    }
+
+    // If a session was already established concurrently, treat as success
+    const { data } = await supabase.auth.getSession();
+    if (data.session) {
+      return null;
+    }
+
+    return error.message;
+  })();
+
+  codeExchangePromises.set(code, promise);
+  return promise;
+}
+
+function isAuthCallbackPath(pathname: string): boolean {
+  return pathname === '/auth/callback' || pathname === '/auth/callback/';
+}
+
 function extractMetadataProfile(authUser: User): UserProfile {
   const meta = authUser.user_metadata ?? {};
   const appMeta = authUser.app_metadata ?? {};
@@ -99,6 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (
       window.location.pathname !== '/' ||
       window.location.search.includes('code=') ||
+      window.location.search.includes('error=') ||
       window.location.hash.includes('access_token=')
     ) {
       window.history.replaceState({}, '', '/');
@@ -112,22 +146,79 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const initAuth = async () => {
       try {
+        const currentPathname = window.location.pathname;
+        const onCallbackRoute = isAuthCallbackPath(currentPathname);
+
+        const searchParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(
+          window.location.hash.startsWith('#')
+            ? window.location.hash.slice(1)
+            : ''
+        );
+
+        const code = searchParams.get('code');
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        const oauthError =
+          searchParams.get('error_description') ||
+          searchParams.get('error') ||
+          hashParams.get('error_description') ||
+          hashParams.get('error');
+
+        // When served statically (e.g., on Vercel) inside an OAuth popup, forward callback params to opener
+        if (
+          onCallbackRoute &&
+          window.opener &&
+          !window.opener.closed &&
+          (code || accessToken || oauthError)
+        ) {
+          try {
+            window.opener.postMessage(
+              {
+                type: 'SUPABASE_OAUTH_CALLBACK',
+                code,
+                access_token: accessToken,
+                refresh_token: refreshToken,
+                error: searchParams.get('error') || hashParams.get('error'),
+                error_description:
+                  searchParams.get('error_description') ||
+                  hashParams.get('error_description'),
+              },
+              '*'
+            );
+          } catch {
+            // Fall through to closing window
+          }
+          window.close();
+          return;
+        }
+
         const supabase = createClient();
 
-        // Handle PKCE ?code= redirect when returning directly in a full browser tab
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
-        const oauthError =
-          params.get('error_description') || params.get('error');
-
+        // Handle OAuth callback params (?code= PKCE or #access_token= implicit)
         if (oauthError) {
-          setAuthError(oauthError);
-          window.history.replaceState({}, '', window.location.pathname);
+          if (mounted) {
+            setAuthError(oauthError);
+          }
+          window.history.replaceState({}, '', currentPathname);
         } else if (code) {
-          const { error: exchangeErr } =
-            await supabase.auth.exchangeCodeForSession(code);
-          if (exchangeErr) {
-            setAuthError(exchangeErr.message);
+          const exchangeErrMsg = await exchangeAuthCodeOnce(code);
+          if (!mounted) return;
+          if (exchangeErrMsg) {
+            setAuthError(exchangeErrMsg);
+            window.history.replaceState({}, '', currentPathname);
+          } else {
+            redirectToMainIfNeeded();
+          }
+        } else if (accessToken && refreshToken) {
+          const { error: sessionErr } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (!mounted) return;
+          if (sessionErr) {
+            setAuthError(sessionErr.message);
+            window.history.replaceState({}, '', currentPathname);
           } else {
             redirectToMainIfNeeded();
           }
@@ -142,9 +233,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
         if (currentSession?.user) {
           await syncUserToDatabase(currentSession.user);
-          if (window.location.pathname === '/auth') {
+          if (currentPathname === '/auth' || onCallbackRoute) {
             redirectToMainIfNeeded();
           }
+        } else if (onCallbackRoute && !oauthError && !code && !accessToken) {
+          // Direct visit to /auth/callback with no OAuth parameters
+          redirectToMainIfNeeded();
         }
 
         const listener = supabase.auth.onAuthStateChange(
@@ -188,6 +282,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const isAllowedOrigin =
         origin === window.location.origin ||
         origin.endsWith('.run.app') ||
+        origin.endsWith('.vercel.app') ||
         origin.includes('localhost');
 
       if (!isAllowedOrigin || event.data?.type !== 'SUPABASE_OAUTH_CALLBACK') {
@@ -204,17 +299,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       try {
-        const supabase = createClient();
-
         if (code) {
-          const { error: exchangeError } =
-            await supabase.auth.exchangeCodeForSession(code);
-          if (exchangeError) {
-            setAuthError(exchangeError.message);
+          const exchangeErrMsg = await exchangeAuthCodeOnce(code);
+          if (exchangeErrMsg) {
+            setAuthError(exchangeErrMsg);
           } else {
             redirectToMainIfNeeded();
           }
         } else if (access_token && refresh_token) {
+          const supabase = createClient();
           const { error: sessionError } = await supabase.auth.setSession({
             access_token,
             refresh_token,
