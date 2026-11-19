@@ -7,19 +7,44 @@ import { SlideExpressions } from './components/slides/SlideExpressions';
 import { SlideVirtualDialogue } from './components/slides/SlideVirtualDialogue';
 import { SlideTopicSelection } from './components/slides/SlideTopicSelection';
 import { SlideWrapUp } from './components/slides/SlideWrapUp';
+import { LoginModal } from './components/LoginModal';
+import { AuthPage } from './pages/AuthPage';
+import { useAuth } from './contexts/AuthContext';
 import { Film, CheckCircle2, ChevronLeft, ChevronRight, Layers, Users, BookOpen } from 'lucide-react';
 
 export default function App() {
+  const { isAuthenticated } = useAuth();
   const [currentSlide, setCurrentSlide] = useState<number>(1);
   const [userAnswers, setUserAnswers] = useState<Record<string, 'A' | 'B' | 'C'>>({});
   const [userFillIns, setUserFillIns] = useState<Record<number, string>>({});
   const [showSlideTray, setShowSlideTray] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [pathname, setPathname] = useState<string>(() =>
+    typeof window !== 'undefined' ? window.location.pathname : '/'
+  );
+
+  // Listen for SPA path updates (e.g. redirect to main page after login)
+  useEffect(() => {
+    const handlePopState = () => {
+      setPathname(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Automatically navigate back to main page when authenticated on /auth
+  useEffect(() => {
+    if (isAuthenticated && pathname === '/auth') {
+      window.history.replaceState({}, '', '/');
+      setPathname('/');
+    }
+  }, [isAuthenticated, pathname]);
 
   // Keyboard navigation for slides
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't intercept if user is typing in an input
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+      // Don't intercept if modal is open or user is typing in an input
+      if (showLoginModal || ['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
         return;
       }
       if (e.key === 'ArrowRight' || e.key === 'PageDown') {
@@ -31,7 +56,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [showLoginModal]);
 
   const handleSelectAnswer = (qId: string, answer: 'A' | 'B' | 'C') => {
     setUserAnswers((prev) => ({ ...prev, [qId]: answer }));
@@ -65,6 +90,11 @@ export default function App() {
     { num: 20, title: 'Wrap-up & Exit Ticket', category: 'Wrap-up', tag: '마무리' },
   ];
 
+  // Standalone /auth route (redirects to main page once signed in)
+  if (pathname === '/auth') {
+    return <AuthPage />;
+  }
+
   return (
     <div className="min-h-screen bg-[#0e1915] text-slate-100 flex flex-col font-sans selection:bg-amber-400 selection:text-slate-950">
       {/* Top Navigation */}
@@ -72,6 +102,13 @@ export default function App() {
         currentSlide={currentSlide}
         onNavigateSlide={setCurrentSlide}
         totalSlides={20}
+        onOpenLogin={() => setShowLoginModal(true)}
+      />
+
+      {/* In-page Login Modal (no page navigation) */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
       />
 
       {/* Main Slide Presentation Stage */}

@@ -10,20 +10,33 @@ import {
   BookOpen,
   Volume2,
   Sparkles,
-  Maximize2
+  Maximize2,
+  LogIn,
+  LogOut,
+  User as UserIcon
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface NavbarProps {
   currentSlide: number;
   onNavigateSlide: (slide: number) => void;
   totalSlides?: number;
+  onOpenLogin: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentSlide,
   onNavigateSlide,
   totalSlides = 20,
+  onOpenLogin,
 }) => {
+  const { isAuthenticated, profile, user, signOut } = useAuth();
+  const [avatarError, setAvatarError] = useState(false);
+
+  // Reset avatar fallback state if avatar_url changes
+  useEffect(() => {
+    setAvatarError(false);
+  }, [profile?.avatar_url]);
   // 80 min classroom timer
   const [secondsRemaining, setSecondsRemaining] = useState(80 * 60);
   const [timerRunning, setTimerRunning] = useState(false);
@@ -159,6 +172,77 @@ export const Navbar: React.FC<NavbarProps> = ({
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
+
+          {/* Top-right Login Link or Profile Avatar Hover Popover */}
+          {isAuthenticated ? (
+            <div className="relative group pl-2 border-l border-emerald-900/70">
+              <button
+                type="button"
+                className="flex items-center justify-center w-9 h-9 rounded-full overflow-hidden ring-2 ring-amber-400/70 group-hover:ring-amber-300 bg-emerald-900/80 text-amber-300 transition-all cursor-pointer focus:outline-hidden focus:ring-amber-300"
+                aria-label="사용자 프로필 메뉴"
+              >
+                {profile?.avatar_url && !avatarError ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt={profile.full_name || profile.email || 'User profile'}
+                    referrerPolicy="no-referrer"
+                    onError={() => setAvatarError(true)}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xs font-extrabold uppercase flex items-center justify-center w-full h-full">
+                    {(profile?.full_name || profile?.email || user?.email || '')
+                      .trim()
+                      .charAt(0) || <UserIcon className="w-4 h-4" />}
+                  </span>
+                )}
+              </button>
+
+              {/* Hover Popover Card */}
+              <div className="absolute right-0 top-full pt-2 w-56 invisible opacity-0 translate-y-1 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:visible group-focus-within:opacity-100 group-focus-within:translate-y-0 transition-all duration-150 z-50">
+                <div className="rounded-2xl bg-[#14231e] border border-emerald-800/80 shadow-2xl p-3 space-y-2.5">
+                  <div className="px-1">
+                    {profile?.full_name && (
+                      <p className="text-xs font-bold text-white truncate">
+                        {profile.full_name}
+                      </p>
+                    )}
+                    <p
+                      className="text-[11px] text-emerald-200/80 truncate"
+                      title={profile?.email || user?.email || ''}
+                    >
+                      {profile?.email || user?.email}
+                    </p>
+                  </div>
+
+                  <div className="h-px bg-emerald-900/80" />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void signOut();
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:text-amber-300 hover:bg-emerald-950/90 transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign out</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <a
+              href="#login"
+              onClick={(e) => {
+                e.preventDefault();
+                onOpenLogin();
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-400/15 hover:bg-amber-400/25 border border-amber-400/40 text-xs font-bold text-amber-300 hover:text-amber-200 transition-colors"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>로그인</span>
+            </a>
+          )}
         </div>
       </div>
     </header>
